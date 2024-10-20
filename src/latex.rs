@@ -1,3 +1,4 @@
+use super::citations::Citations;
 use regex::Regex;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
@@ -125,14 +126,14 @@ impl Lexer<BufReader<File>> {
     }
 }
 
-pub fn gather_citations(latex_file: &str) -> Vec<String> {
+pub fn gather_citations(latex_file: &str) -> Citations {
     let mut lexer = Lexer::from_str(latex_file);
 
-    let mut citations = Vec::new();
+    let mut citations = Citations::new();
 
     while let Some(token) = lexer.next_token() {
         if let Token::Citation(citation) = token {
-            citations.push(citation);
+            citations.insert(citation);
         }
     }
 

@@ -2,6 +2,7 @@ use clap::{crate_authors, crate_name, crate_version, ArgAction, Parser};
 use std::process;
 
 mod bib;
+mod citations;
 mod latex;
 
 #[derive(Parser)]
@@ -36,14 +37,13 @@ fn main() {
     let latex_file = &cli.latex_file;
     let bib_file = &cli.bib_file;
 
-    // TODO: specify how many are unique?  Have some kind of container for citations?
     println!(
         "Found {} citations in {latex_file:?}",
-        latex::gather_citations(latex_file).len()
+        latex::gather_citations(latex_file).count()
     );
     println!(
         "Found {} entries in {bib_file:?}",
-        bib::gather_bib_entries(bib_file).len()
+        bib::gather_bib_entries(bib_file).count()
     );
 
     process::exit(0);

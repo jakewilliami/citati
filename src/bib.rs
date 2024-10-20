@@ -1,3 +1,4 @@
+use super::citations::Citations;
 use biblatex::Bibliography;
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
@@ -50,7 +51,7 @@ fn parse_bib_from_file(bib_file: &str) -> Bibliography {
     Bibliography::parse(&src).unwrap()
 }
 
-pub fn gather_bib_entries(bib_file: &str) -> Vec<String> {
+pub fn gather_bib_entries(bib_file: &str) -> Citations {
     let bib = parse_bib_from_file(bib_file);
-    bib.keys().map(|s| s.to_string()).collect()
+    Citations::from(bib.keys().map(|s| s.to_string()))
 }
