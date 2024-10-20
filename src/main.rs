@@ -1,6 +1,7 @@
 use clap::{crate_authors, crate_name, crate_version, ArgAction, Parser};
 use std::process;
 
+mod bib;
 mod latex;
 
 #[derive(Parser)]
@@ -19,15 +20,31 @@ struct Cli {
         default_value = "document.tex",
     )]
     latex_file: String,
+
+    /// BibTeX file
+    #[arg(
+        action = ArgAction::Set,
+        num_args = 0..=1,
+        value_name = "bib file",
+        default_value = "references.bib",
+    )]
+    bib_file: String,
 }
 
 fn main() {
     let cli = Cli::parse();
     let latex_file = &cli.latex_file;
+    let bib_file = &cli.bib_file;
 
-    for i in latex::gather_citations(latex_file) {
-        println!("{i:?}");
-    }
+    // TODO: specify how many are unique?  Have some kind of container for citations?
+    println!(
+        "Found {} citations in {latex_file:?}",
+        latex::gather_citations(latex_file).len()
+    );
+    println!(
+        "Found {} entries in {bib_file:?}",
+        bib::gather_bib_entries(bib_file).len()
+    );
 
     process::exit(0);
 }
