@@ -6,6 +6,22 @@ mod citations;
 mod latex;
 mod unused;
 
+// TODO:
+//   - ~Add --unused functionality~
+//   - Add --pages functionality
+//   - Add --article functionality
+//   - Add --collection functionality
+//   - Add --book functionality
+//   - Add --count functionality
+//   - Add checker for journals to be capitalised appropriately
+//   - Port to Rust
+//   - Check no duplicate IDs
+//   - TODO: check no "and others" in the authors
+//   - Check that "and" in publisher is expected
+//   - Check correct capitalisation of journal
+//   - FIX UNUSED COMMAND
+//   - check no . at end of title
+
 #[derive(Parser)]
 #[command(
     name = crate_name!(),
