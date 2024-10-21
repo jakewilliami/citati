@@ -15,6 +15,8 @@ mod latex;
 struct Cli {
     /// LaTeX file
     #[arg(
+        short = 'f',
+        long = "file",
         action = ArgAction::Set,
         num_args = 0..=1,
         value_name = "latex file",
@@ -24,6 +26,8 @@ struct Cli {
 
     /// BibTeX file
     #[arg(
+        short = 'b',
+        long = "bibliography",
         action = ArgAction::Set,
         num_args = 0..=1,
         value_name = "bib file",
