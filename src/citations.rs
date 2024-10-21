@@ -27,16 +27,18 @@ impl Citations {
         self.data.insert(citation)
     }
 
-    pub fn contains(&self, citation: &String) -> bool {
-        self.data.contains(citation)
-    }
-
     pub fn count(&self) -> usize {
         self.data.len()
     }
 
-    fn difference(&self, other: &Self) -> Self {
+    pub fn difference(&self, other: Self) -> Self {
         let data = self.data.difference(&other.data).cloned();
         Self::from(data)
+    }
+
+    pub fn list_sorted(&self) -> Vec<String> {
+        let mut citations: Vec<String> = self.data.iter().cloned().collect();
+        citations.sort();
+        citations
     }
 }
