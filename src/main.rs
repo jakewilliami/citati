@@ -7,7 +7,6 @@ mod latex;
 mod unused;
 
 // TODO:
-//   - ~Add --unused functionality~
 //   - Add --pages functionality
 //   - Add --article functionality
 //   - Add --collection functionality
@@ -77,11 +76,10 @@ pub struct Group {
 
 fn main() {
     let cli = Cli::parse();
-    let latex_file = &cli.latex_file;
-    let bib_file = &cli.bib_file;
+    let citations = citations::gather_citations(&cli.latex_file, &cli.bib_file);
 
     if cli.group.unused {
-        unused::unused_citations_from_sources(latex_file, bib_file);
+        unused::unused_citations(&citations);
     }
 
     process::exit(0);

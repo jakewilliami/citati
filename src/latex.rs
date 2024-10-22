@@ -1,12 +1,17 @@
-use super::citations::Citations;
 use regex::Regex;
-use std::fs::{self, File};
-use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+    io::{BufRead, BufReader},
+    path::{Path, PathBuf},
+};
+pub struct LaTeXCitation {
+    key: String,
+    pub cite_cmd: String,
+}
 
-#[derive(Debug)]
 enum Token {
-    Citation(String),
+    Citation(LaTeXCitation),
     Other,
 }
 
@@ -24,7 +29,7 @@ struct Lexer<R: BufRead> {
 // Create a new lexer
 impl<R: BufRead> Lexer<R> {
     fn new(reader: R, base_path: PathBuf) -> Self {
-        let citation_regex = Regex::new(r"\\\w*cite\{([^}]+)\}").unwrap();
+        let citation_regex = Regex::new(r"\\(\w*cite)\{([^}]+)\}").unwrap();
         Lexer {
             reader,
             citation_regex,
@@ -83,13 +88,15 @@ impl Lexer<BufReader<File>> {
 
         // Check for citation commands
         if let Some(caps) = self.citation_regex.captures(line) {
-            let citations = caps.get(1).map_or("", |m| m.as_str());
+            let cite_cmd = caps.get(1).map(|m| m.as_str().to_string()).unwrap();
+            let citations = caps.get(2).map_or("", |m| m.as_str());
 
             // Split citations by comma and return each as a separate token
             for citation in citations.split(',') {
                 let citation = citation.trim();
                 if !citation.is_empty() {
-                    return Some(Token::Citation(citation.to_string()));
+                    let key = citation.to_string();
+                    return Some(Token::Citation(LaTeXCitation { key, cite_cmd }));
                 }
             }
         }
@@ -126,14 +133,13 @@ impl Lexer<BufReader<File>> {
     }
 }
 
-pub fn gather_citations(latex_file: &str) -> Citations {
+pub fn gather_citations(latex_file: &str) -> HashMap<String, LaTeXCitation> {
     let mut lexer = Lexer::from_str(latex_file);
-
-    let mut citations = Citations::new();
+    let mut citations = HashMap::new();
 
     while let Some(token) = lexer.next_token() {
         if let Token::Citation(citation) = token {
-            citations.insert(citation);
+            citations.insert(citation.key.clone(), citation);
         }
     }
 

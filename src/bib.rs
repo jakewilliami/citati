@@ -1,8 +1,7 @@
-use super::citations::Citations;
-use biblatex::Bibliography;
+use biblatex::{Bibliography, Entry};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
-use std::fs;
+use std::{collections::HashMap, fs};
 
 lazy_static! {
     static ref BIB_RE: Regex = RegexBuilder::new(r"^@(?<type>\w+)\{(?<id>\w+),(?<rest>[^@]*)\}")
@@ -51,7 +50,13 @@ fn parse_bib_from_file(bib_file: &str) -> Bibliography {
     Bibliography::parse(&src).unwrap()
 }
 
-pub fn gather_bib_entries(bib_file: &str) -> Citations {
+pub fn gather_bib_entries(bib_file: &str) -> HashMap<String, Entry> {
     let bib = parse_bib_from_file(bib_file);
-    Citations::from(bib.keys().map(|s| s.to_string()))
+    let mut entries = HashMap::new();
+
+    for entry in bib.iter() {
+        entries.insert(entry.key.clone(), entry.clone());
+    }
+
+    entries
 }

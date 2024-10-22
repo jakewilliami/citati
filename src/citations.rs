@@ -1,44 +1,57 @@
-use std::collections::HashSet;
+use super::{bib, latex};
+use biblatex::Entry;
+use std::collections::{HashMap, HashSet};
+
+pub struct Citation {
+    pub key: String,
+    entry: Option<Entry>,
+    cite_cmd: Option<String>,
+}
+
+impl Citation {
+    /// Was the citation actually cited in the LaTeX source?
+    pub fn cited(&self) -> bool {
+        self.cite_cmd.is_some()
+    }
+
+    /// Was the citation found in a bibliography file?
+    pub fn in_bib(&self) -> bool {
+        self.entry.is_some()
+    }
+}
 
 pub struct Citations {
-    data: HashSet<String>,
+    data: HashMap<String, Citation>,
 }
 
 impl Citations {
-    pub fn new() -> Self {
-        Citations {
-            data: HashSet::new(),
-        }
+    pub fn iter(&self) -> impl Iterator<Item = &Citation> {
+        self.data.values()
     }
 }
 
-impl<I> From<I> for Citations
-where
-    I: IntoIterator<Item = String>,
-{
-    fn from(iter: I) -> Self {
-        let data = iter.into_iter().collect();
-        Citations { data }
-    }
-}
+pub fn gather_citations(latex_file: &str, bib_file: &str) -> Citations {
+    let citations = latex::gather_citations(latex_file);
+    let bib_entries = bib::gather_bib_entries(bib_file);
+    let mut data = HashMap::new();
+    let keys: HashSet<String> = citations
+        .keys()
+        .chain(bib_entries.keys())
+        .cloned()
+        .collect();
 
-impl Citations {
-    pub fn insert(&mut self, citation: String) -> bool {
-        self.data.insert(citation)
+    for key in keys {
+        let entry = bib_entries.get(&key).cloned();
+        let cite_cmd = citations.get(&key).map(|c| c.cite_cmd.clone());
+        data.insert(
+            key.clone(),
+            Citation {
+                key,
+                entry,
+                cite_cmd,
+            },
+        );
     }
 
-    pub fn count(&self) -> usize {
-        self.data.len()
-    }
-
-    pub fn difference(&self, other: Self) -> Self {
-        let data = self.data.difference(&other.data).cloned();
-        Self::from(data)
-    }
-
-    pub fn list_sorted(&self) -> Vec<String> {
-        let mut citations: Vec<String> = self.data.iter().cloned().collect();
-        citations.sort();
-        citations
-    }
+    Citations { data }
 }

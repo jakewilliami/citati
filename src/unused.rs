@@ -1,15 +1,14 @@
-use super::{bib, citations::Citations, latex};
+use super::citations::Citations;
 
-fn unused_citations(citations: Citations, bib_entries: Citations) -> Citations {
-    bib_entries.difference(citations)
-}
+pub fn unused_citations(citations: &Citations) {
+    let mut unused: Vec<String> = citations
+        .iter()
+        .filter(|c| c.in_bib() && !c.cited())
+        .map(|c| c.key.clone())
+        .collect();
+    unused.sort();
 
-pub fn unused_citations_from_sources(latex_file: &str, bib_file: &str) {
-    let citations = latex::gather_citations(latex_file);
-    let bib_entries = bib::gather_bib_entries(bib_file);
-    let unused = unused_citations(citations, bib_entries);
-
-    for citation in unused.list_sorted() {
-        println!("{citation}");
+    for citation in unused.iter() {
+        println!("{citation}")
     }
 }
