@@ -1,21 +1,26 @@
 use regex::Regex;
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
 };
+
 pub struct LaTeXCitation {
-    key: String,
+    pub key: String,
+    pub cite_cmds: Vec<String>,
+}
+
+pub struct CitationToken {
+    pub key: String,
     pub cite_cmd: String,
 }
 
-enum Token {
-    Citation(LaTeXCitation),
+pub enum Token {
+    Citation(CitationToken),
     Other,
 }
 
-struct Lexer<R: BufRead> {
+pub struct Lexer<R: BufRead> {
     reader: R,
     citation_regex: Regex,
 
@@ -52,7 +57,7 @@ impl Lexer<BufReader<File>> {
         Self::new(reader, path_buf)
     }
 
-    fn from_str(latex_file: &str) -> Self {
+    pub fn from_str(latex_file: &str) -> Self {
         let path = Path::new(latex_file);
         Self::from_path(path)
     }
@@ -61,7 +66,7 @@ impl Lexer<BufReader<File>> {
 // Implement primary lexer function to get next token
 // Currently only works for R: BufReader<File>, but in future we should make this more generic
 impl Lexer<BufReader<File>> {
-    fn next_token(&mut self) -> Option<Token> {
+    pub fn next_token(&mut self) -> Option<Token> {
         // Check the stack first
         if let Some(top_lexer) = self.stack.last_mut() {
             if let Some(token) = top_lexer.next_token() {
@@ -88,7 +93,7 @@ impl Lexer<BufReader<File>> {
 
         // Check for citation commands
         if let Some(caps) = self.citation_regex.captures(line) {
-            let cite_cmd = caps.get(1).map(|m| m.as_str().to_string()).unwrap();
+            let cite_cmd = caps.get(1).map(|m| m.as_str().to_owned()).unwrap();
             let citations = caps.get(2).map_or("", |m| m.as_str());
 
             // Split citations by comma and return each as a separate token
@@ -96,7 +101,7 @@ impl Lexer<BufReader<File>> {
                 let citation = citation.trim();
                 if !citation.is_empty() {
                     let key = citation.to_string();
-                    return Some(Token::Citation(LaTeXCitation { key, cite_cmd }));
+                    return Some(Token::Citation(CitationToken { key, cite_cmd }));
                 }
             }
         }
@@ -131,17 +136,4 @@ impl Lexer<BufReader<File>> {
         // If no citation command is found, treat it as 'Other'.
         Some(Token::Other)
     }
-}
-
-pub fn gather_citations(latex_file: &str) -> HashMap<String, LaTeXCitation> {
-    let mut lexer = Lexer::from_str(latex_file);
-    let mut citations = HashMap::new();
-
-    while let Some(token) = lexer.next_token() {
-        if let Token::Citation(citation) = token {
-            citations.insert(citation.key.clone(), citation);
-        }
-    }
-
-    citations
 }

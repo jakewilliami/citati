@@ -4,6 +4,7 @@ use std::process;
 mod bib;
 mod citations;
 mod latex;
+mod sources;
 mod unused;
 
 // TODO:
@@ -76,10 +77,9 @@ pub struct Group {
 
 fn main() {
     let cli = Cli::parse();
-    let citations = citations::gather_citations(&cli.latex_file, &cli.bib_file);
 
     if cli.group.unused {
-        unused::unused_citations(&citations);
+        unused::unused_citations(&cli.latex_file, &cli.bib_file);
     }
 
     process::exit(0);

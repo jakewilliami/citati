@@ -1,7 +1,7 @@
 use biblatex::{Bibliography, Entry};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
-use std::{collections::HashMap, fs};
+use std::fs;
 
 lazy_static! {
     static ref BIB_RE: Regex = RegexBuilder::new(r"^@(?<type>\w+)\{(?<id>\w+),(?<rest>[^@]*)\}")
@@ -10,6 +10,18 @@ lazy_static! {
         .build()
         .unwrap();
     static ref UNESCAPED_COMMENT_RE: Regex = Regex::new(r"[^\\]%").unwrap();
+}
+
+#[derive(Clone)]
+pub struct BibCitation {
+    pub key: String,
+    pub entry: Entry,
+}
+
+impl BibCitation {
+    pub fn get(&self, field: &str) -> Option<String> {
+        self.entry.get_as::<String>(field).ok()
+    }
 }
 
 fn comments_in_citation_blocks(src: &str) -> Vec<usize> {
@@ -38,7 +50,7 @@ fn comments_in_citation_blocks(src: &str) -> Vec<usize> {
     violating_lines
 }
 
-fn parse_bib_from_file(bib_file: &str) -> Bibliography {
+pub fn parse_bib_from_file(bib_file: &str) -> Bibliography {
     let src = fs::read_to_string(bib_file).unwrap();
 
     // Check for lines that are malformatted due to comments
@@ -48,15 +60,4 @@ fn parse_bib_from_file(bib_file: &str) -> Bibliography {
     }
 
     Bibliography::parse(&src).unwrap()
-}
-
-pub fn gather_bib_entries(bib_file: &str) -> HashMap<String, Entry> {
-    let bib = parse_bib_from_file(bib_file);
-    let mut entries = HashMap::new();
-
-    for entry in bib.iter() {
-        entries.insert(entry.key.clone(), entry.clone());
-    }
-
-    entries
 }
