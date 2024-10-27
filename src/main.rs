@@ -29,7 +29,9 @@ mod unused;
     version = crate_version!(),
     arg_required_else_help = true,
 )]
-/// Extract archive in memory and get its contents' hash(es)
+/// Citation helper for BibTex
+///
+/// Look through citations in LaTeX/bibliography source and perform various checks for correctness.  Name derived from цитаты (_tsitaty_): quotes/citations.
 struct Cli {
     /// LaTeX file
     #[arg(
@@ -57,10 +59,11 @@ struct Cli {
     group: Group,
 }
 
-// We only want to allow one functional check at a time.  The following group,
-// which is flattened in the main Cli struct, should provide such functionality
-//
-//   https://stackoverflow.com/a/76315811
+/// Group containing individual functional units for the program.
+///
+/// We only want to allow one functional check at a time.  The following group, which is flattened in the main Cli struct, should provide such functionality.
+///
+/// <https://stackoverflow.com/a/76315811>
 #[derive(Args)]
 #[group(required = true, multiple = false)]
 pub struct Group {

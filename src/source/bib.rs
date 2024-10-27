@@ -1,3 +1,7 @@
+//! Read/parse bibliography source
+//!
+//! Lightly wrapping the [`biblatex`]'s [`Bibliography`], we parse the given bibliography file, with some additional error handling to improve help messages.
+
 use biblatex::{Bibliography, Entry};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};

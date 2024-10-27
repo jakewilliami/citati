@@ -1,18 +1,19 @@
+//! Check formatting of `pages` field in bibliography
+//!
+//! Check all bibliography entries have correct formatting of pages; that is, two numbers separated by an en dash.  This module contains the logic for this functionality, which can be accessed using the [`--pages`](`crate::Group::pages`) option.  Unfortunately, some journals will have non-standard page numbering, so this will produce some false postiives.
+
 use super::{
-    citations::{
-        full::Citations,
-        gather::{gather_citations, CitationSource},
-    },
-    source::{bib::BibCitation, sources::Bib},
+    citations::{gather_citations, Citations},
+    source::{Bib, BibCitation, CitationSource},
 };
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::char;
 
 lazy_static! {
-    static ref EM_DASH_CHAR: char = char::from_u32(0x2013).unwrap();
+    static ref EN_DASH_CHAR: char = char::from_u32(0x2013).unwrap();
     static ref BIB_PAGES_RE: Regex =
-        Regex::new(&format!(r"^\d+(--|{})\d+$", *EM_DASH_CHAR)).unwrap();
+        Regex::new(&format!(r"^\d+(--|{})\d+$", *EN_DASH_CHAR)).unwrap();
 }
 
 /// Defines formatting for reporting citations from bib file with malformatted `pages` field
