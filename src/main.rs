@@ -2,6 +2,7 @@ use clap::{crate_authors, crate_name, crate_version, ArgAction, Args, Parser};
 use std::process;
 
 mod citations;
+mod fields;
 mod pages;
 mod source;
 mod unused;
