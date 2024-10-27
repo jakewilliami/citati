@@ -6,6 +6,7 @@ use super::{
     sources::{Bib, LaTeX},
 };
 
+/// List (in alphabetical order) any unused citations from LaTeX and bib sources
 pub fn unused_citations(latex_file: &str, bib_file: &str) {
     let src = CitationSource::new(latex_file, bib_file);
     let citations = gather_citations::<HollowCitations<LaTeX>>(&src);

@@ -1,60 +1,61 @@
-use super::gather::{gather_citations, CitationSource, GatherCitations};
+use super::gather::{CitationSource, GatherCitations};
 use crate::{
     bib::{self, BibCitation},
     latex::{self, LaTeXCitation},
-    sources::{Bib, Composite, LaTeX, Source},
+    sources::{Bib, LaTeX, Source},
 };
-use biblatex::Entry;
-use std::{
-    collections::{HashMap, HashSet},
-    marker::PhantomData,
-};
+use std::collections::HashMap;
 
-#[derive(Clone)]
-pub struct Citation {
-    pub key: String,
-    entry: Option<Entry>,
-    cite_cmds: Vec<String>,
-}
+// NOTE: the following can be uncommented if/when needed
+// /// Struct containing composite information from both LaTeX and bib sources
+// pub struct Citation {
+//     pub key: String,
+//     entry: Option<Entry>,
+//     cite_cmds: Vec<String>,
+// }
+//
+// impl Citation {
+//     /// Was the citation actually cited in the LaTeX source?
+//     pub fn cited(&self) -> bool {
+//         !self.cite_cmds.is_empty()
+//     }
+//
+//     /// Was the citation found in a bibliography file?
+//     pub fn in_bib(&self) -> bool {
+//         self.entry.is_some()
+//     }
+//
+//     /// Get a field from the bib entry of the citation, if present
+//     pub fn get(&self, field: &str) -> Option<String> {
+//         self.entry
+//             .as_ref()
+//             .and_then(|e| e.get_as::<String>(field).ok())
+//     }
+// }
 
-impl Citation {
-    /// Was the citation actually cited in the LaTeX source?
-    pub fn cited(&self) -> bool {
-        !self.cite_cmds.is_empty()
-    }
-
-    /// Was the citation found in a bibliography file?
-    pub fn in_bib(&self) -> bool {
-        self.entry.is_some()
-    }
-
-    // TODO: document
-    pub fn get(&self, field: &str) -> Option<String> {
-        //TODO: use chunks or whatever
-        self.entry
-            .as_ref()
-            .and_then(|e| e.get_as::<String>(field).ok())
-    }
-}
-
+/// Struct containing a collection of citations
+///
+/// The type of citations in the collection depends on the source of the citations
 pub struct Citations<S: Source> {
     data: HashMap<String, S::CitationType>,
-    // TODO: do we need phantom data?
-    _source: PhantomData<S>,
 }
 
+/// Implementations on the `Citations` struct for convenience
+///
+/// These implementations typically access the underlying data but provide a useful/convenient API for the `Citations` struct
 impl<S: Source> Citations<S> {
-    pub fn iter(&self) -> impl Iterator<Item = &S::CitationType> {
-        self.data.values()
-    }
-
-    pub fn keys(&self) -> impl Iterator<Item = &String> {
-        self.data.keys()
-    }
-
-    pub fn get(&self, key: &String) -> Option<&S::CitationType> {
-        self.data.get(key)
-    }
+    // NOTE: the following can be uncommented if/when needed
+    // pub fn iter(&self) -> impl Iterator<Item = &S::CitationType> {
+    //     self.data.values()
+    // }
+    //
+    // pub fn keys(&self) -> impl Iterator<Item = &String> {
+    //     self.data.keys()
+    // }
+    //
+    // pub fn get(&self, key: &String) -> Option<&S::CitationType> {
+    //     self.data.get(key)
+    // }
 
     pub fn list_sorted(&self) -> Vec<&S::CitationType> {
         let mut citations: Vec<(&String, &S::CitationType)> = self.data.iter().collect();
@@ -70,23 +71,19 @@ impl<S: Source> Citations<S> {
         F: Fn(&S::CitationType) -> bool,
         S::CitationType: Clone,
     {
-        let filtered_data: HashMap<String, S::CitationType> = self
+        let data: HashMap<String, S::CitationType> = self
             .data
             .iter()
             .filter(|(_, citation)| predicate(citation))
             .map(|(key, citation)| (key.clone(), citation.clone()))
             .collect();
 
-        Citations {
-            data: filtered_data,
-            _source: PhantomData,
-        }
+        Citations { data }
     }
 }
 
-// TODO: document
+/// Implement the `gather` function for `Citations` for LaTeX source code
 impl GatherCitations for Citations<LaTeX> {
-    // impl GatherCitations for LaTeX {
     fn gather(src: &CitationSource) -> Self {
         // TODO: instead of unwrapping source, write impl on CitationSource for validating both fields
         let mut lexer = latex::Lexer::from_str(src.latex_file.unwrap());
@@ -107,22 +104,20 @@ impl GatherCitations for Citations<LaTeX> {
             data.insert(
                 key.clone(),
                 LaTeXCitation {
-                    key: key.to_owned(),
-                    cite_cmds,
+                    _key: key.to_owned(),
+                    _cite_cmds: cite_cmds,
                 },
             );
         }
 
-        Self {
-            data,
-            _source: PhantomData,
-        }
+        Self { data }
     }
 }
 
-// TODO: document
+/// Implement the `gather` function for `Citations` for a bibliography
 impl GatherCitations for Citations<Bib> {
     fn gather(src: &CitationSource) -> Self {
+        // TODO: instead of unwrapping source, write impl on CitationSource for validating the field
         let bib = bib::parse_bib_from_file(src.bib_file.unwrap());
         let mut data = HashMap::new();
         for entry in bib.iter() {
@@ -135,44 +130,39 @@ impl GatherCitations for Citations<Bib> {
             );
         }
 
-        Self {
-            data,
-            _source: PhantomData,
-        }
+        Self { data }
     }
 }
 
-// TODO: Implement the trait for Citations
-impl GatherCitations for Citations<Composite> {
-    fn gather(src: &CitationSource) -> Self {
-        let citations = gather_citations::<Citations<LaTeX>>(&src);
-        let bib_entries = gather_citations::<Citations<Bib>>(&src);
-
-        let mut data = HashMap::new();
-        let keys: HashSet<String> = citations
-            .keys()
-            .chain(bib_entries.keys())
-            .cloned()
-            .collect();
-
-        for key in keys {
-            let entry = bib_entries.get(&key).and_then(|c| Some(c.entry.clone()));
-            let cite_cmds = citations
-                .get(&key)
-                .map_or_else(Vec::new, |c| c.cite_cmds.clone());
-            data.insert(
-                key.clone(),
-                Citation {
-                    key,
-                    entry,
-                    cite_cmds,
-                },
-            );
-        }
-
-        Self {
-            data,
-            _source: PhantomData,
-        }
-    }
-}
+// NOTE: the following can be uncommented if/when needed
+// /// Collect citations from multiple sources and aggregate/compose them
+// impl GatherCitations for Citations<Composite> {
+//     fn gather(src: &CitationSource) -> Self {
+//         let citations = gather_citations::<Citations<LaTeX>>(&src);
+//         let bib_entries = gather_citations::<Citations<Bib>>(&src);
+//
+//         let mut data = HashMap::new();
+//         let keys: HashSet<String> = citations
+//             .keys()
+//             .chain(bib_entries.keys())
+//             .cloned()
+//             .collect();
+//
+//         for key in keys {
+//             let entry = bib_entries.get(&key).and_then(|c| Some(c.entry.clone()));
+//             let cite_cmds = citations
+//                 .get(&key)
+//                 .map_or_else(Vec::new, |c| c.cite_cmds.clone());
+//             data.insert(
+//                 key.clone(),
+//                 Citation {
+//                     key,
+//                     entry,
+//                     cite_cmds,
+//                 },
+//             );
+//         }
+//
+//         Self { data }
+//     }
+// }

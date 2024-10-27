@@ -5,12 +5,17 @@ use crate::{
 };
 use std::{collections::HashSet, marker::PhantomData};
 
+/// Collection of citation keys from some specified source
+///
+/// This is "hollow" or "shallow" because we don't need to store any more information beyond the citation keys.  Note that `_source` is required so that we use the generic type `S: Source` to allow type inference etc. to work (I don't fully understand it but if I remove it things stop working)
 pub struct HollowCitations<S: Source> {
     data: HashSet<String>,
     _source: PhantomData<S>,
 }
 
+/// Convenient implementation of construction of `HollowCitations`
 impl<S: Source> HollowCitations<S> {
+    /// Constructor method for `HollowCitations`
     pub fn new() -> Self {
         Self {
             data: HashSet::new(),
@@ -19,10 +24,12 @@ impl<S: Source> HollowCitations<S> {
     }
 }
 
+/// Conveninent implementation of construction of `HollowCitations` from an iterable
 impl<I, S: Source> From<I> for HollowCitations<S>
 where
     I: IntoIterator<Item = String>,
 {
+    /// Constructor method for `HollowCitations` from iterable
     fn from(iter: I) -> Self {
         let data = iter.into_iter().collect();
         Self {
@@ -32,16 +39,20 @@ where
     }
 }
 
+/// Implementations on the `HollowCitations` struct for convenience
+///
+/// These implementations typically access the underlying data but provide a useful/convenient API for the `HollowCitations` struct
 impl<S: Source> HollowCitations<S> {
     pub fn insert(&mut self, citation: String) -> bool {
         self.data.insert(citation)
     }
 
-    pub fn count(&self) -> usize {
-        self.data.len()
-    }
+    // NOTE: the following can be uncommented if/when needed
+    // pub fn count(&self) -> usize {
+    //     self.data.len()
+    // }
 
-    // TODO: consider changing unspecified
+    /// Create an `Abstract` `HollowCitations` struct from the set difference of two `HollowCitations` objects
     pub fn difference<R: Source>(&self, other: HollowCitations<R>) -> HollowCitations<Abstract> {
         let data = self.data.difference(&other.data).cloned();
         HollowCitations::<Abstract>::from(data)
@@ -54,7 +65,7 @@ impl<S: Source> HollowCitations<S> {
     }
 }
 
-// TODO: Implement for HollowCitations
+/// Implement the `gather` function for `HollowCitations` for LaTeX source code
 impl GatherCitations for HollowCitations<LaTeX> {
     fn gather(src: &CitationSource) -> Self {
         // TODO: instead of unwrapping source, write impl on CitationSource for validating the field
@@ -68,7 +79,8 @@ impl GatherCitations for HollowCitations<LaTeX> {
         citations
     }
 }
-// TODO: Implement for HollowCitations
+
+/// Implement the `gather` function for `HollowCitations` for a bibliography
 impl GatherCitations for HollowCitations<Bib> {
     fn gather(src: &CitationSource) -> Self {
         // TODO: instead of unwrapping source, write impl on CitationSource for validating the field
