@@ -4,11 +4,11 @@ use std::process;
 mod bib;
 mod citations;
 mod latex;
+mod pages;
 mod sources;
 mod unused;
 
 // TODO:
-//   - Add --pages functionality
 //   - Add --article functionality
 //   - Add --collection functionality
 //   - Add --book functionality
@@ -21,6 +21,8 @@ mod unused;
 //   - Check correct capitalisation of journal
 //   - FIX UNUSED COMMAND
 //   - check no . at end of title
+//   - Check that inside parentheses we are using `nptextcite`
+//   - Make citations an enum type from string
 
 #[derive(Parser)]
 #[command(
@@ -73,6 +75,16 @@ pub struct Group {
         default_value_t = false,
     )]
     unused: bool,
+
+    /// Show bib keys of citations in bib file that do not use proper formatting for pages
+    #[arg(
+        short = 'p',
+        long = "pages",
+        action = ArgAction::SetTrue,
+        num_args = 0,
+        default_value_t = false,
+    )]
+    pages: bool,
 }
 
 fn main() {
@@ -80,6 +92,8 @@ fn main() {
 
     if cli.group.unused {
         unused::unused_citations(&cli.latex_file, &cli.bib_file);
+    } else if cli.group.pages {
+        pages::check_bib_pages(&cli.bib_file);
     }
 
     process::exit(0);
