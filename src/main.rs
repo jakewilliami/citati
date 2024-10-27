@@ -1,11 +1,9 @@
 use clap::{crate_authors, crate_name, crate_version, ArgAction, Args, Parser};
 use std::process;
 
-mod bib;
 mod citations;
-mod latex;
 mod pages;
-mod sources;
+mod source;
 mod unused;
 
 // TODO:

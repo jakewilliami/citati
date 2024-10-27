@@ -1,5 +1,5 @@
 use super::gather::{CitationSource, GatherCitations};
-use crate::{
+use crate::source::{
     bib::{self, BibCitation},
     latex::{self, LaTeXCitation},
     sources::{Bib, LaTeX, Source},

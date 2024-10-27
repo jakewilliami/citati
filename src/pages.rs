@@ -1,10 +1,9 @@
 use super::{
-    bib::BibCitation,
     citations::{
         full::Citations,
         gather::{gather_citations, CitationSource},
     },
-    sources::Bib,
+    source::{bib::BibCitation, sources::Bib},
 };
 use lazy_static::lazy_static;
 use regex::Regex;

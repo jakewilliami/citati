@@ -3,7 +3,7 @@ use super::{
         gather::{gather_citations, CitationSource},
         hollow::HollowCitations,
     },
-    sources::{Bib, LaTeX},
+    source::sources::{Bib, LaTeX},
 };
 
 /// List (in alphabetical order) any unused citations from LaTeX and bib sources
