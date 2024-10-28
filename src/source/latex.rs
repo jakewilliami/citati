@@ -1,3 +1,7 @@
+//! Read/parse LaTeX source code
+//!
+//! Implements a simple lexer for LaTeX source code with two tokens: [`Citation`](`super::latex::Token::Citation`)s and [`Other`](`super::latex::Token::Other`).  Using this we can continue reading from the lexer until we find no tokens left ([`None`]).  Note that we intentionally implement following `\input{}`s in LaTeX source to direct us to other source files.  We do not handle this for other commands that insert external content (e.g., `\include.*`, `\intput.+`).
+
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::{

@@ -1,11 +1,9 @@
 use clap::{crate_authors, crate_name, crate_version, ArgAction, Args, Parser};
-use std::process;
 
-mod bib;
 mod citations;
-mod latex;
+mod fields;
 mod pages;
-mod sources;
+mod source;
 mod unused;
 
 // TODO:
@@ -31,7 +29,9 @@ mod unused;
     version = crate_version!(),
     arg_required_else_help = true,
 )]
-/// Extract archive in memory and get its contents' hash(es)
+/// Citation helper for BibTex
+///
+/// Look through citations in LaTeX/bibliography source and perform various checks for correctness.  Name derived from цитаты (_tsitaty_): quotes/citations.
 struct Cli {
     /// LaTeX file
     #[arg(
@@ -59,10 +59,11 @@ struct Cli {
     group: Group,
 }
 
-// We only want to allow one functional check at a time.  The following group,
-// which is flattened in the main Cli struct, should provide such functionality
-//
-//   https://stackoverflow.com/a/76315811
+/// Group containing individual functional units for the program.
+///
+/// We only want to allow one functional check at a time.  The following group, which is flattened in the main Cli struct, should provide such functionality.
+///
+/// <https://stackoverflow.com/a/76315811>
 #[derive(Args)]
 #[group(required = true, multiple = false)]
 pub struct Group {
@@ -85,6 +86,16 @@ pub struct Group {
         default_value_t = false,
     )]
     pages: bool,
+
+    /// Show bib keys of article citations in bib file that do not contain required fields
+    #[arg(
+        short = 'a',
+        long = "article",
+        action = ArgAction::SetTrue,
+        num_args = 0,
+        default_value_t = false,
+    )]
+    article: bool,
 }
 
 fn main() {
@@ -94,7 +105,9 @@ fn main() {
         unused::unused_citations(&cli.latex_file, &cli.bib_file);
     } else if cli.group.pages {
         pages::check_bib_pages(&cli.bib_file);
+    } else if cli.group.article {
+        fields::article::check_article_fields(&cli.bib_file);
     }
 
-    process::exit(0);
+    std::process::exit(0);
 }

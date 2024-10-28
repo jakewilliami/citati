@@ -1,4 +1,8 @@
-use biblatex::{Bibliography, Entry};
+//! Read/parse bibliography source
+//!
+//! Lightly wrapping the [`biblatex`]'s [`Bibliography`], we parse the given bibliography file, with some additional error handling to improve help messages.
+
+use biblatex::{Bibliography, Entry, EntryType};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
 use std::fs;
@@ -21,6 +25,18 @@ pub struct BibCitation {
 impl BibCitation {
     pub fn get(&self, field: &str) -> Option<String> {
         self.entry.get_as::<String>(field).ok()
+    }
+
+    pub fn has_field(&self, field: &str) -> bool {
+        self.entry.get(field).is_some()
+    }
+
+    pub fn has_fields(&self, fields: &[&str]) -> bool {
+        fields.iter().all(|f| self.has_field(f))
+    }
+
+    pub fn entry_type(&self) -> EntryType {
+        self.entry.entry_type.clone()
     }
 }
 

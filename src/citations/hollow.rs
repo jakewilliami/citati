@@ -1,8 +1,9 @@
-use super::gather::{CitationSource, GatherCitations};
-use crate::{
-    bib, latex,
-    sources::{Abstract, Bib, LaTeX, Source},
-};
+//! Gather citation keys from sources
+//!
+//! Gather citations with shallow/hollow information from various sources.  This is a light wrapper around a hash set containing the keys we are citing from various sources.  _c.f._ [`full`](`super::full`).
+
+use super::gather::GatherCitations;
+use crate::source::{bib, latex, Abstract, Bib, CitationSource, LaTeX, Source};
 use std::{collections::HashSet, marker::PhantomData};
 
 /// Collection of citation keys from some specified source

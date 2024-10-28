@@ -1,9 +1,9 @@
-use super::gather::{CitationSource, GatherCitations};
-use crate::{
-    bib::{self, BibCitation},
-    latex::{self, LaTeXCitation},
-    sources::{Bib, LaTeX, Source},
-};
+//! Gather citations with full/in-depth information
+//!
+//! Gather citations with bib entry and LaTeX citation information (where applicable).  _c.f._ [`hollow`](`super::hollow`).
+
+use super::GatherCitations;
+use crate::source::{bib, latex, Bib, BibCitation, CitationSource, LaTeX, LaTeXCitation, Source};
 use std::collections::HashMap;
 
 // NOTE: the following can be uncommented if/when needed

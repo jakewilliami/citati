@@ -1,9 +1,10 @@
+//! Check LaTeX source for any unused citations defined in bibliography
+//!
+//! Check for any bibliography entries that are defined but not used in the LaTeX source.  This module contains the logic for this functionality, which can be accessed using the [`--unused`](`crate::Group::unused`) option.
+
 use super::{
-    citations::{
-        gather::{gather_citations, CitationSource},
-        hollow::HollowCitations,
-    },
-    sources::{Bib, LaTeX},
+    citations::{gather_citations, HollowCitations},
+    source::{Bib, CitationSource, LaTeX},
 };
 
 /// List (in alphabetical order) any unused citations from LaTeX and bib sources
