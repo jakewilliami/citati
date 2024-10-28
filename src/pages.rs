@@ -32,6 +32,7 @@ pub fn check_bib_pages(bib_file: &str) {
     let src = CitationSource::from_bib(bib_file);
     let bib_entries = gather_citations::<Citations<Bib>>(&src);
     let citations_with_bad_bib_pages = bib_entries.filter(|c| {
+        // TODO: use c.entry.pages() rather than c.get("pages")?
         c.get("pages")
             .map_or(false, |pages| !BIB_PAGES_RE.is_match(&pages))
     });
