@@ -1,5 +1,4 @@
 use clap::{crate_authors, crate_name, crate_version, ArgAction, Args, Parser};
-use std::process;
 
 mod citations;
 mod fields;
@@ -87,6 +86,16 @@ pub struct Group {
         default_value_t = false,
     )]
     pages: bool,
+
+    /// Show bib keys of article citations in bib file that do not contain required fields
+    #[arg(
+        short = 'a',
+        long = "article",
+        action = ArgAction::SetTrue,
+        num_args = 0,
+        default_value_t = false,
+    )]
+    article: bool,
 }
 
 fn main() {
@@ -96,7 +105,9 @@ fn main() {
         unused::unused_citations(&cli.latex_file, &cli.bib_file);
     } else if cli.group.pages {
         pages::check_bib_pages(&cli.bib_file);
+    } else if cli.group.article {
+        fields::article::check_article_fields(&cli.bib_file);
     }
 
-    process::exit(0);
+    std::process::exit(0);
 }
