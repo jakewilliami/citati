@@ -72,17 +72,20 @@ fn strip_comments(src: &str) -> String {
     // We want to strip comments (indicated by %) from each line of source.
     // If we encounter a % character, we can skip to the next line.
     'lines: for line in src.lines() {
-        for c in line.chars() {
-            if c == '%' {
+        for ch in line.chars() {
+            if ch == '%' {
                 // Trim superfluous whitespace from end of string preceeding
-                // comment if needed.
-                out = out.trim_end().to_string();
+                // comment if needed.  We do this in-place by truncating the
+                // string after the last non-whitespace character
+                if let Some(i) = out.rfind(|c: char| !c.is_whitespace()) {
+                    out.truncate(i + 1)
+                }
 
                 // Continue to the next line as a comment has been encountered
                 continue 'lines;
             }
 
-            out.push(c);
+            out.push(ch);
         }
     }
 
