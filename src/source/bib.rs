@@ -72,7 +72,7 @@ pub fn parse_bib_from_file(bib_file: &str) -> Bibliography {
     // Check for lines that are malformatted due to comments
     let violating_lines = comments_in_citation_blocks(&src);
     if !violating_lines.is_empty() {
-        eprintln!("[WARN] You have comments inside , which Typyst's BibLaTeX does not currently support (typyst/biblatex#64).\n  We will try to parse the bibliography file anyway, but it will likely fail.\n  Violating lines are:\n    {}", violating_lines.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "))
+        eprintln!("[WARN] You have comments inside {:?}, which Typst's BibLaTeX does not currently support (typst/biblatex#64).\n  We will try to parse the bibliography file anyway, but it will likely fail.\n  Violating lines are:\n    {}", bib_file, violating_lines.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
     }
 
     Bibliography::parse(&src).unwrap()
