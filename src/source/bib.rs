@@ -77,6 +77,13 @@ fn strip_comments(src: &str) -> String {
 
         'chars: for ch in chars {
             if ch == '%' {
+                // In this case, we have encountered a LaTeX-style comment.
+                // The other comment that we could have encountered is a legacy
+                // BibTeX-style comment (@Comment {}), however, I don't want to
+                // re-write the lexer that Typst provides and I don't typically
+                // use this style of comment, so I am happy to ignore it until
+                // or unless it becomes a problem...
+
                 // Count the number of consecutive backslashes before the comment
                 // character in order to determine whether the character has been
                 // escaped or not
