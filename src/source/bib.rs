@@ -76,9 +76,17 @@ fn strip_comments(src: &str) -> String {
             if ch == '%' {
                 // Trim superfluous whitespace from end of string preceeding
                 // comment if needed.  We do this in-place by truncating the
-                // string after the last non-whitespace character
-                if let Some(i) = out.rfind(|c: char| !c.is_whitespace()) {
-                    out.truncate(i + 1)
+                // string after the last non-whitespace character.
+                //
+                // We use char indices to account for UTF-8:
+                //   https://stackoverflow.com/a/76754489
+                // We can't just truncate from i + 1 because it mightn't be
+                // a valid index.
+                let mut indices = out.char_indices();
+                if let Some((i, _)) = indices.rfind(|(_, c)| !c.is_whitespace()) {
+                    if let Some((j, _)) = indices.nth(i + 1) {
+                        out.truncate(j)
+                    }
                 }
 
                 // Continue to the next line as a comment has been encountered
