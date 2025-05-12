@@ -13,7 +13,6 @@ lazy_static! {
         .dot_matches_new_line(true)
         .build()
         .unwrap();
-    static ref UNESCAPED_COMMENT_RE: Regex = Regex::new(r"[^\\]%").unwrap();
 }
 
 #[derive(Clone)]
@@ -40,6 +39,33 @@ impl BibCitation {
     }
 }
 
+// A private, helper trait to determine whether a character at which the
+// cursor is pointing at in some buffer is escaped using backslashes.
+trait LaTeXCharEscaped {
+    fn is_escaped(&self) -> bool;
+}
+
+impl LaTeXCharEscaped for str {
+    fn is_escaped(&self) -> bool {
+        // Count the number of consecutive backslashes before the character
+        // in order to determine whether the character has been escaped or not
+        let mut n = 0;
+        for c in self.chars().rev() {
+            if c == '\\' {
+                n += 1;
+            } else {
+                break;
+            }
+        }
+
+        // If the number of consecutive backslashes immediately preceeding
+        // the character is odd, then it has been escaped; otherwise, these
+        // are literal backslashes that have each been escaped an even number
+        // of times and so they are all treated as character literals
+        n % 2 == 1
+    }
+}
+
 fn comments_in_citation_blocks(src: &str) -> Vec<usize> {
     let mut violating_lines = Vec::new();
     let mut line_number;
@@ -55,10 +81,15 @@ fn comments_in_citation_blocks(src: &str) -> Vec<usize> {
         // checking for violating lines
         for (i, line) in full_match.lines().enumerate() {
             let current_line_number = line_number + i + 1;
+            let mut buf = String::new();
 
             // Check for unescaped '%' in the line
-            if UNESCAPED_COMMENT_RE.is_match(line) {
-                violating_lines.push(current_line_number)
+            'chars: for ch in line.chars() {
+                if ch == '%' && !buf.is_escaped() {
+                    violating_lines.push(current_line_number);
+                    break 'chars;
+                }
+                buf.push(ch);
             }
         }
     }
@@ -72,11 +103,10 @@ fn strip_comments(src: &str) -> String {
     // We want to strip comments (indicated by %) from each line of source.
     // If we encounter a % character, we can skip to the next line.
     for line in src.lines() {
-        let chars = line.chars();
         let mut buf = String::new();
 
-        'chars: for ch in chars {
-            if ch == '%' {
+        'chars: for ch in line.chars() {
+            if ch == '%' && !buf.is_escaped() {
                 // In this case, we have encountered a LaTeX-style comment.
                 // The other comment that we could have encountered is a legacy
                 // BibTeX-style comment (@Comment {}), however, I don't want to
@@ -84,43 +114,22 @@ fn strip_comments(src: &str) -> String {
                 // use this style of comment, so I am happy to ignore it until
                 // or unless it becomes a problem...
 
-                // Count the number of consecutive backslashes before the comment
-                // character in order to determine whether the character has been
-                // escaped or not
-                let mut n = 0;
-                for c in buf.chars().rev() {
-                    if c == '\\' {
-                        n += 1;
-                    } else {
-                        break;
-                    }
+                // Trim superfluous whitespace from end of string preceeding
+                // comment if needed.  We do this in-place by truncating the
+                // string until we no longer find any whitespace.  This should
+                // handle unicode as we truncate (pop) character by character
+                // rather than using truncate with indices.
+                //
+                // See earlier versions in ec65e24, 6e70f50, and 783fa42
+                while buf.ends_with(char::is_whitespace) {
+                    buf.pop();
                 }
 
-                // If the number of consecutive backslashes immediately preceeding
-                // the comment character is odd, then the comment has been escaped,
-                // otherwise, these are literal backslashes that have each been
-                // escaped an even number of times
-                let comment_escaped = n % 2 == 1;
-                if comment_escaped {
-                    buf.push(ch);
-                } else {
-                    // Trim superfluous whitespace from end of string preceeding
-                    // comment if needed.  We do this in-place by truncating the
-                    // string until we no longer find any whitespace.  This should
-                    // handle unicode as we truncate (pop) character by character
-                    // rather than using truncate with indices.
-                    //
-                    // See earlier versions in ec65e24, 6e70f50, and 783fa42
-                    while buf.ends_with(char::is_whitespace) {
-                        buf.pop();
-                    }
-
-                    // Continue to the next line as a comment has been encountered
-                    // and handled.  Technically we continue to the end of the `chars`
-                    // loop as we still need to push the current line buffer to the
-                    // source file, which happens at the end of each `chars` loop.
-                    break 'chars;
-                }
+                // Continue to the next line as a comment has been encountered
+                // and handled.  Technically we continue to the end of the `chars`
+                // loop as we still need to push the current line buffer to the
+                // source file, which happens at the end of each `chars` loop.
+                break 'chars;
             } else {
                 // If no comment has been encountered, then we can push the present
                 // character to the line buffer, carefree.
