@@ -74,6 +74,11 @@ fn strip_comments(src: &str) -> String {
     'lines: for line in src.lines() {
         for c in line.chars() {
             if c == '%' {
+                // Trim superfluous whitespace from end of string preceeding
+                // comment if needed.
+                out = out.trim_end().to_string();
+
+                // Continue to the next line as a comment has been encountered
                 continue 'lines;
             }
 
