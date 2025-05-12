@@ -71,29 +71,60 @@ fn strip_comments(src: &str) -> String {
 
     // We want to strip comments (indicated by %) from each line of source.
     // If we encounter a % character, we can skip to the next line.
-    'lines: for line in src.lines() {
-        for ch in line.chars() {
+    for line in src.lines() {
+        let chars = line.chars();
+        let mut buf = String::new();
+
+        'chars: for ch in chars {
             if ch == '%' {
-                // Trim superfluous whitespace from end of string preceeding
-                // comment if needed.  We do this in-place by truncating the
-                // string after the last non-whitespace character.
-                //
-                // We use char indices to account for UTF-8:
-                //   https://stackoverflow.com/a/76754489
-                // We can't just truncate from i + 1 because it mightn't be
-                // a valid index.
-                let mut indices = out.char_indices();
-                if let Some((i, _)) = indices.rfind(|(_, c)| !c.is_whitespace()) {
-                    if let Some((j, _)) = indices.nth(i + 1) {
-                        out.truncate(j)
+                // Count the number of consecutive backslashes before the comment
+                // character in order to determine whether the character has been
+                // escaped or not
+                let mut n = 0;
+                for c in buf.chars().rev() {
+                    if c == '\\' {
+                        n += 1;
+                    } else {
+                        break;
                     }
                 }
 
-                // Continue to the next line as a comment has been encountered
-                continue 'lines;
-            }
+                // If the number of consecutive backslashes immediately preceeding
+                // the comment character is odd, then the comment has been escaped,
+                // otherwise, these are literal backslashes that have each been
+                // escaped an even number of times
+                let comment_escaped = n % 2 == 1;
+                if comment_escaped {
+                    buf.push(ch);
+                } else {
+                    // Trim superfluous whitespace from end of string preceeding
+                    // comment if needed.  We do this in-place by truncating the
+                    // string until we no longer find any whitespace.  This should
+                    // handle unicode as we truncate (pop) character by character
+                    // rather than using truncate with indices.
+                    //
+                    // See earlier versions in ec65e24, 6e70f50, and 783fa42
+                    while buf.ends_with(char::is_whitespace) {
+                        buf.pop();
+                    }
 
-            out.push(ch);
+                    // Continue to the next line as a comment has been encountered
+                    // and handled.  Technically we continue to the end of the `chars`
+                    // loop as we still need to push the current line buffer to the
+                    // source file, which happens at the end of each `chars` loop.
+                    break 'chars;
+                }
+            } else {
+                // If no comment has been encountered, then we can push the present
+                // character to the line buffer, carefree.
+                buf.push(ch);
+            }
+        }
+
+        // Add the current line buffer to the end of the modified source file
+        if !buf.is_empty() {
+            out.push_str(&buf);
+            out.push('\n');
         }
     }
 
