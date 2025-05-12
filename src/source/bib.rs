@@ -66,14 +66,34 @@ fn comments_in_citation_blocks(src: &str) -> Vec<usize> {
     violating_lines
 }
 
+fn strip_comments(src: &str) -> String {
+    let mut out = String::new();
+
+    // We want to strip comments (indicated by %) from each line of source.
+    // If we encounter a % character, we can skip to the next line.
+    'lines: for line in src.lines() {
+        for c in line.chars() {
+            if c == '%' {
+                continue 'lines;
+            }
+
+            out.push(c);
+        }
+    }
+
+    out
+}
+
 pub fn parse_bib_from_file(bib_file: &str) -> Bibliography {
-    let src = fs::read_to_string(bib_file).unwrap();
+    let mut src = fs::read_to_string(bib_file).unwrap();
 
     // Check for lines that are malformatted due to comments
     let violating_lines = comments_in_citation_blocks(&src);
     if !violating_lines.is_empty() {
-        eprintln!("[WARN] You have comments inside {:?}, which Typst's BibLaTeX does not currently support (typst/biblatex#64).\n  We will try to parse the bibliography file anyway, but it will likely fail.\n  Violating lines are:\n    {}", bib_file, violating_lines.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        eprintln!("[WARN] You have comments inside {:?}, which Typst's BibLaTeX does not currently support (typst/biblatex#64).\n  We will try skip these before parsing.\n  Violating lines are:\n    {}", bib_file, violating_lines.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
+        src = strip_comments(&src);
     }
 
+    // Parse the file into a bibliography
     Bibliography::parse(&src).unwrap()
 }
