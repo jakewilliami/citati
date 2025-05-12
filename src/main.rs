@@ -90,10 +90,20 @@ pub struct Group {
     /// Show bib keys of article citations in bib file that do not contain required fields
     #[arg(
         short = 'a',
+        long = "articles",
+        action = ArgAction::SetTrue,
+        num_args = 0,
+        default_value_t = false,
+    )]
+    articles: bool,
+
+    /* Deprecated */
+    #[arg(
         long = "article",
         action = ArgAction::SetTrue,
         num_args = 0,
         default_value_t = false,
+        hide = true,
     )]
     article: bool,
 }
@@ -103,9 +113,19 @@ fn main() {
 
     if cli.group.unused {
         unused::unused_citations(&cli.latex_file, &cli.bib_file);
-    } else if cli.group.pages {
+    }
+
+    if cli.group.pages {
         pages::check_bib_pages(&cli.bib_file);
-    } else if cli.group.article {
+    }
+
+    if cli.group.article || cli.group.articles {
+        if cli.group.article {
+            eprintln!(
+                "[WARN] --article option is deprecated since v0.3.2.  Use --articles instead"
+            );
+        }
+
         fields::article::check_article_fields(&cli.bib_file);
     }
 

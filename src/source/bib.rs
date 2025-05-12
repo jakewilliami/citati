@@ -3,17 +3,7 @@
 //! Lightly wrapping the [`biblatex`]'s [`Bibliography`], we parse the given bibliography file, with some additional error handling to improve help messages.
 
 use biblatex::{Bibliography, Entry, EntryType};
-use lazy_static::lazy_static;
-use regex::{Regex, RegexBuilder};
 use std::fs;
-
-lazy_static! {
-    static ref BIB_RE: Regex = RegexBuilder::new(r"^@(?<type>\w+)\{(?<id>\w+),(?<rest>[^@]*)\}")
-        .multi_line(true)
-        .dot_matches_new_line(true)
-        .build()
-        .unwrap();
-}
 
 #[derive(Clone)]
 pub struct BibCitation {
@@ -64,37 +54,6 @@ impl LaTeXCharEscaped for str {
         // of times and so they are all treated as character literals
         n % 2 == 1
     }
-}
-
-fn comments_in_citation_blocks(src: &str) -> Vec<usize> {
-    let mut violating_lines = Vec::new();
-    let mut line_number;
-
-    for capture in BIB_RE.captures_iter(src) {
-        let full_match = capture.get(0).unwrap().as_str();
-
-        // Calculate the line number in the file for the start of this match
-        let match_start = capture.get(0).unwrap().start();
-        line_number = src[..match_start].lines().count();
-
-        // Split the entire match into individual lines and iterate over them,
-        // checking for violating lines
-        for (i, line) in full_match.lines().enumerate() {
-            let current_line_number = line_number + i + 1;
-            let mut buf = String::new();
-
-            // Check for unescaped '%' in the line
-            'chars: for ch in line.chars() {
-                if ch == '%' && !buf.is_escaped() {
-                    violating_lines.push(current_line_number);
-                    break 'chars;
-                }
-                buf.push(ch);
-            }
-        }
-    }
-
-    violating_lines
 }
 
 fn strip_comments(src: &str) -> String {
@@ -150,12 +109,8 @@ fn strip_comments(src: &str) -> String {
 pub fn parse_bib_from_file(bib_file: &str) -> Bibliography {
     let mut src = fs::read_to_string(bib_file).unwrap();
 
-    // Check for lines that are malformatted due to comments
-    let violating_lines = comments_in_citation_blocks(&src);
-    if !violating_lines.is_empty() {
-        eprintln!("[WARN] You have comments inside {:?}, which Typst's BibLaTeX does not currently support (typst/biblatex#64).\n  We will try skip these before parsing.\n  Violating lines are:\n    {}", bib_file, violating_lines.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "));
-        src = strip_comments(&src);
-    }
+    // As of v0.3.3, we no longer warn the user about comments in their bibliography src
+    src = strip_comments(&src);
 
     // Parse the file into a bibliography
     Bibliography::parse(&src).unwrap()
